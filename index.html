@@ -3,66 +3,63 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mycelium Network — Cosmos</title>
+  <title>Mycelium Network — Cosmos Debug</title>
   <script type="module">
     import Cosmos from 'https://cdn.jsdelivr.net/npm/cosmos-gl@latest/+esm';
 
-    // Рекурсивно превращаем JSON с fid / invited в список рёбер
+    const status = document.getElementById('status');
+    status.textContent = '🔄 Loading JSON...';
+
     async function loadGraph() {
-      const res = await fetch('invitations--fid--1-20251106-153044.json');
-      const data = await res.json();
+      try {
+        const res = await fetch('invitations-fid--1-20251106-153044.json');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        status.textContent = '✅ JSON loaded. Rendering graph...';
 
-      const links = [];
-      const nodes = new Set();
+        const links = [];
+        const nodes = new Set();
 
-      function traverse(node) {
-        if (!node || !node.fid) return;
-        nodes.add(node.fid);
-        for (const child of node.invited || []) {
-          links.push({ source: node.fid, target: child.fid });
-          traverse(child);
+        function traverse(node) {
+          if (!node || !node.fid) return;
+          nodes.add(node.fid);
+          for (const child of node.invited || []) {
+            links.push({ source: node.fid, target: child.fid });
+            traverse(child);
+          }
         }
+
+        const root = Array.isArray(data) ? data[0] : data;
+        traverse(root);
+
+        status.textContent = `✅ Parsed ${nodes.size} nodes, ${links.length} links`;
+
+        const cosmos = new Cosmos(document.getElementById('cosmos'), {
+          nodes: [...nodes].map(id => ({ id })),
+          links,
+          backgroundColor: '#03040a',
+          nodeColor: n => '#8affc1',
+          linkColor: l => '#1f2630',
+          linkOpacity: 0.1,
+          nodeOpacity: 0.9,
+          nodeSize: 2,
+          linkWidth: 0.25,
+          forceStrength: -6,
+          enableZoom: true,
+          enableDragging: false,
+          showNodeLabels: false,
+          autoSetSize: true,
+        });
+
+        cosmos.render();
+        status.textContent = `🌌 Rendered ${nodes.size} nodes and ${links.length} links`;
+      } catch (err) {
+        console.error(err);
+        status.textContent = '❌ Error loading JSON: ' + err.message;
       }
-
-      const root = Array.isArray(data) ? data[0] : data;
-      traverse(root);
-
-      return {
-        nodes: [...nodes].map(id => ({ id })),
-        links
-      };
     }
 
-    async function main() {
-      const container = document.getElementById('cosmos');
-      const { nodes, links } = await loadGraph();
-
-      const cosmos = new Cosmos(container, {
-        nodes,
-        links,
-        backgroundColor: '#03040a',
-        nodeColor: n => '#8affc1',
-        linkColor: l => '#1f2630',
-        linkOpacity: 0.12,
-        nodeOpacity: 0.9,
-        nodeSize: 2.2,
-        linkWidth: 0.25,
-        forceStrength: -6,
-        enableZoom: true,
-        enableDragging: false,
-        showNodeLabels: false,
-        autoSetSize: true,
-      });
-
-      cosmos.render();
-
-      // Пульсация для живого эффекта
-      setInterval(() => {
-        cosmos.setNodeSizeScale(0.9 + Math.random() * 0.3);
-      }, 2000);
-    }
-
-    main();
+    loadGraph();
   </script>
   <style>
     html, body {
@@ -70,16 +67,30 @@
       padding: 0;
       width: 100%;
       height: 100%;
-      overflow: hidden;
       background-color: #03040a;
+      overflow: hidden;
+      color: #8affc1;
+      font-family: monospace;
     }
     #cosmos {
-      width: 100%;
-      height: 100%;
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+    #status {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 10;
+      background: rgba(0,0,0,0.6);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
   <div id="cosmos"></div>
+  <div id="status">Initializing...</div>
 </body>
 </html>
