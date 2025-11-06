@@ -7,7 +7,7 @@
   <script type="module">
     import Cosmos from 'https://cdn.jsdelivr.net/npm/cosmos-gl@latest/+esm';
 
-    // рекурсивно превращаем JSON с fid / invited в список ребёр
+    // Рекурсивно превращаем JSON с fid / invited в список рёбер
     async function loadGraph() {
       const res = await fetch('invitations-fid--1-20251106-153044.json');
       const data = await res.json();
@@ -24,11 +24,8 @@
         }
       }
 
-      if (Array.isArray(data)) {
-        data.forEach(traverse);
-      } else {
-        traverse(data);
-      }
+      const root = Array.isArray(data) ? data[0] : data;
+      traverse(root);
 
       return {
         nodes: [...nodes].map(id => ({ id })),
@@ -59,7 +56,7 @@
 
       cosmos.render();
 
-      // пульсация для живого эффекта
+      // Пульсация для живого эффекта
       setInterval(() => {
         cosmos.setNodeSizeScale(0.9 + Math.random() * 0.3);
       }, 2000);
