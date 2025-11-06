@@ -9,7 +9,7 @@
 
     // Рекурсивно превращаем JSON с fid / invited в список рёбер
     async function loadGraph() {
-      const res = await fetch('invitations-fid--1-20251106-153044.json');
+      const res = await fetch('invitations--fid--1-20251106-153044.json');
       const data = await res.json();
 
       const links = [];
